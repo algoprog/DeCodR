@@ -1,5 +1,4 @@
-# DeCodR
-Code & Repo Search with Autoencoders
+# Code & Repo Search with Autoencoders
 
 We can use this model implementation: https://github.com/shentianxiao/text-autoencoders
 
