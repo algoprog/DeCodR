@@ -1,5 +1,4 @@
-# DeCodR
-Dense Code &amp; Repository Retrieval
+# Dense Code &amp; Repository Retrieval
 
 We can use the implementations here from Sentence Transformers.
 
