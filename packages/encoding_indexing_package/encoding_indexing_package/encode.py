@@ -136,6 +136,9 @@ class Encoder:
         entries = 0
         for batch_idx, (pids, batch) in enumerate(encode_loader):
             entries += batch_size
+            if batch_idx % (len(encode_loader) // 100) == 0:
+                print(f'{batch_idx / len(encode_loader)} percent encoded', flush=True)
+
             if max_entries_in_memory is not None and entries > max_entries_in_memory:
                 self.save_data(encoded, lookup_indices, f'{shard_num}.pickle')
                 shard_num += 1

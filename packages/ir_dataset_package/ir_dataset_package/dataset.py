@@ -1,3 +1,4 @@
+from optparse import Option
 import os
 import csv
 import hashlib
@@ -295,6 +296,34 @@ class TokenizedMultiNegativeDataset(CollectionIrDatasetBase):
         return query_lookup
 
 
+class TokenizedMultiNegativeDatasetTevatron(TokenizedMultiNegativeDataset):
+    def __init__(
+        self,
+        tokenizer: Union[str, PreTrainedTokenizer, PreTrainedTokenizerFast],
+        collection_path: str,
+        query_path: str,
+        triplet_ids_path: str,
+        cache_dir: Optional[str],
+        num_negatives: int = 1,
+        query_keys: Optional[List[str]] = None,
+        lazy_tokenize: bool = False,
+    ) -> None:
+        super().__init__(
+            tokenizer,
+            collection_path,
+            query_path,
+            triplet_ids_path,
+            cache_dir,
+            num_negatives,
+            num_positives=1,
+            query_keys=query_keys,
+            lazy_tokenize=lazy_tokenize,
+        )
+
+    def __getitem__(self, index) -> Any:
+        qry, pos_psg, neg_psg = super().__getitem__(index)
+        return [qry], pos_psg + neg_psg
+
 class TokenizedQrelPairDataset(CollectionIrDatasetBase):
     def __init__(
         self,
@@ -389,7 +418,9 @@ class TokenizedQrelPairDataset(CollectionIrDatasetBase):
 
         if self.lazy_tokenize:
             tok_query = self._lazy_tokenizer(query, max_length=self.query_max_length)
-            tok_pos_passages = self._lazy_tokenizer(passage, max_length=self.passage_max_length)
+            tok_pos_passages = self._lazy_tokenizer(
+                passage, max_length=self.passage_max_length
+            )
         else:
             tok_query = query
             tok_pos_passages = passage
@@ -421,12 +452,14 @@ class CollectionDataset(BaseIrDataset):
         cache_dir: str,
         tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
         lazy_tokenize: bool = False,
+        max_length: int = 512,
     ) -> None:
         super().__init__(cache_dir=cache_dir)
         self.collection_path = collection_path
         self.cache_dir = cache_dir
         self.lazy_tokenize = lazy_tokenize
         self.tokenizer = tokenizer
+        self.max_length = max_length
 
         self.collection = datasets.load_dataset(
             'csv',
@@ -440,7 +473,10 @@ class CollectionDataset(BaseIrDataset):
             print('Tokenizing collection', flush=True)
             self.collection = self.collection.map(
                 lambda examples: self.tokenizer(
-                    examples['text'], truncation=True, return_token_type_ids=False
+                    examples['text'],
+                    truncation=True,
+                    max_length=self.max_length,
+                    return_token_type_ids=False,
                 ),
                 batched=True,
             )
@@ -453,7 +489,10 @@ class CollectionDataset(BaseIrDataset):
 
         if self.lazy_tokenize:
             tokenized_item = self.tokenizer(
-                item['text'], truncation=True, return_token_type_ids=False
+                item['text'],
+                truncation=True,
+                max_length=self.max_length,
+                return_token_type_ids=False,
             )
 
             tokenized_item['text'] = item['text']
@@ -474,6 +513,8 @@ class QueryDataset(BaseIrDataset):
         tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
         lazy_tokenize: bool = False,
         tokenizer_kwargs: Dict[str, str] = {},
+        max_length: int = 512,
+        max_num_queries: Optional[int] = None,
     ) -> None:
         super().__init__(cache_dir=cache_dir)
         self.query_path = query_path
@@ -481,6 +522,8 @@ class QueryDataset(BaseIrDataset):
         self.lazy_tokenize = lazy_tokenize
         self.tokenizer = tokenizer
         self.tokenizer_kwargs = tokenizer_kwargs
+        self.max_length = max_length
+        self.max_num_queries = max_num_queries
 
         self.queries = datasets.load_dataset(
             'csv',
@@ -497,13 +540,17 @@ class QueryDataset(BaseIrDataset):
                     examples['text'],
                     truncation=True,
                     return_token_type_ids=False,
+                    max_length=self.max_length,
                     **self.tokenizer_kwargs,
                 ),
                 batched=True,
             )
 
     def __len__(self) -> int:
-        return len(self.queries)
+        if self.max_num_queries is None:
+            return len(self.queries)
+        else:
+            return self.max_num_queries
 
     def __getitem__(self, index: int) -> Any:
         item = self.queries[index]
@@ -513,6 +560,7 @@ class QueryDataset(BaseIrDataset):
                 item['text'],
                 truncation=True,
                 return_token_type_ids=False,
+                max_length=self.max_length,
                 **self.tokenizer_kwargs,
             )
 

@@ -129,3 +129,10 @@ dmypy.json
 .pyre/
 models/.DS_Store
 .DS_Store
+
+# Output stuff
+slurm_outputs/
+outputs/
+wandb/
+*.txt
+*.json

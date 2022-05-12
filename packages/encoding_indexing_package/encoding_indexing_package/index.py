@@ -122,7 +122,7 @@ class Indexer:
         self.index.add(processed_embs)
         print('Done adding embeddings to index')
 
-    def trec_metrics(self, embeddings, labels, qrels_path: str, k: int = 1000):
+    def trec_metrics(self, embeddings, labels, qrels_path: str, k: int = 1000, return_search: bool = False):
         run = self._search(embeddings, labels, k)
         run = json.loads(json.dumps(run))
 
@@ -140,7 +140,11 @@ class Indexer:
                 [query_measures[measure] for query_measures in results.values()]
             )
             metrics[measure] = aggregated_metric
-        return metrics
+
+        if return_search:
+            return (metrics, run)
+        else:
+            return metrics
             
 
     def _search(self, embeddings, labels, k: int = 10):
@@ -163,9 +167,9 @@ class Indexer:
     def _process_search(self, dist_mat, indices_mat, query_labels):
         output = defaultdict(lambda: defaultdict(int))
         for i in range(len(query_labels)):
-            q_label = int(query_labels[i])
+            q_label = query_labels[i]
             for j, idx in enumerate(indices_mat[i]):
-                pid = int(self.labels[idx])
+                pid = self.labels[idx]
                 output[q_label][pid] += float(dist_mat[i][j])
         return output
 
