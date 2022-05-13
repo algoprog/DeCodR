@@ -1,5 +1,7 @@
 # DeCodR
-Semantic Code &amp; Repository Search
+Semantic Code &amp; Repository Search - [Project Report](https://github.com/algoprog/DeCodR/blob/main/report.pdf)
+
+This was a final group project for [CS 685](https://people.cs.umass.edu/~miyyer/cs685/) (Advanced NLP at UMASS Amherst)
 
 # Project Structure
 
